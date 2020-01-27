@@ -24,8 +24,41 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationTool
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 
+def open_files(fasta_file, gff3_file):
+    fasta_data = __read_fasta(fasta_file)
+    gff3_data = __read_gff3(gff3_file)
+    
+    return fasta_data, gff3_data
+
+
+def load_data(fasta_data, gff3_data, pattern):
+    
+    print("Processing data...")
+
+    fasta_objects, gff3_objects, gff3_attrs_ID, gff3_attrs_Par, chr_lengths = __process_data(fasta_data, gff3_data, pattern)
+
+    print("Comparing data...")
+
+    del fasta_data
+    del gff3_data
+
+    gc.collect()
+
+    __compare(fasta_objects, gff3_objects, gff3_attrs_ID, gff3_attrs_Par)
+
+    del gff3_attrs_ID
+    del gff3_attrs_Par
+
+    gc.collect()
+    
+    return fasta_objects, gff3_objects, chr_lengths
+
+"""
+Main methode voor het uitvoeren van het script vanuit hier.
+De GUI roept bovenstaande methodes aan.
+"""
 @profile
-def main():
+def __main():
     data_dir = "Data/"
     fasta_name = "TAIR10_pep_20101214.fa"
     gff3_name = "TAIR10_GFF3_genes.gff"
@@ -35,12 +68,12 @@ def main():
 
     print("Getting data...")
 
-    fasta_data = read_fasta(data_dir+fasta_name)
-    gff3_data = read_gff3(data_dir+gff3_name)
+    fasta_data = __read_fasta(data_dir+fasta_name)
+    gff3_data = __read_gff3(data_dir+gff3_name)
 
     print("Processing data...")
 
-    fasta_objects, gff3_objects, gff3_attrs_ID, gff3_attrs_Par, chr_lengths = process_data(fasta_data, gff3_data, pattern)
+    fasta_objects, gff3_objects, gff3_attrs_ID, gff3_attrs_Par, chr_lengths = __process_data(fasta_data, gff3_data, pattern)
 
     print("Comparing data...")
 
@@ -49,7 +82,7 @@ def main():
 
     gc.collect()
 
-    compare(fasta_objects, gff3_objects, gff3_attrs_ID, gff3_attrs_Par)
+    __compare(fasta_objects, gff3_objects, gff3_attrs_ID, gff3_attrs_Par)
 
     del gff3_attrs_ID
     del gff3_attrs_Par
@@ -59,21 +92,21 @@ def main():
 #    print_info(fasta_objects)
 
     if show_plot:
-        frequencies = count_fasta_chr(fasta_objects)
-        make_plot(frequencies)
+        frequencies = __count_fasta_chr(fasta_objects)
+        __make_plot(frequencies)
 
 
-def read_fasta(location):
+def __read_fasta(location):
     with open(location) as fasta_file:
         return file_processing.fix_linebreaks(fasta_file)
 
 
-def read_gff3(location):
+def __read_gff3(location):
     with open(location) as gff3_file:
         return file_processing.process_csv(gff3_file, "\t")
 
 
-def process_data(fasta_data, gff3_data, pattern):
+def __process_data(fasta_data, gff3_data, pattern):
     fasta_objects = []
     gff3_objects = []
     gff3_attrs_ID = []
@@ -100,7 +133,7 @@ def process_data(fasta_data, gff3_data, pattern):
     return fasta_objects, gff3_objects, gff3_attrs_ID, gff3_attrs_Par, chr_lengths
 
 
-def compare(fasta_objects, gff3_objects, gff3_attrs_ID, gff3_attrs_Par):
+def __compare(fasta_objects, gff3_objects, gff3_attrs_ID, gff3_attrs_Par):
 
 #    for x in gff3_attrs:
 #        if x == "AT1G01010.1":
@@ -109,13 +142,13 @@ def compare(fasta_objects, gff3_objects, gff3_attrs_ID, gff3_attrs_Par):
 #    print("con",gff3_attrs[0:20])
 
     for index, fasta_object in enumerate(fasta_objects):
-        indexes(gff3_attrs_Par, fasta_object, gff3_objects)
-        start_stop(gff3_attrs_ID, fasta_object, gff3_objects)
+        __indexes(gff3_attrs_Par, fasta_object, gff3_objects)
+        __start_stop(gff3_attrs_ID, fasta_object, gff3_objects)
 #        if index > 5:
 #            break
 
 
-def start_stop(lst, fasta_object, gff3_objects):
+def __start_stop(lst, fasta_object, gff3_objects):
     element = fasta_object.get_seqID().split(".")[0]
 
     gff3_object = gff3_objects[lst.index(element)]
@@ -124,7 +157,7 @@ def start_stop(lst, fasta_object, gff3_objects):
     fasta_object.set_stop(gff3_object.get_end())
 
 
-def indexes(lst, fasta_object, gff3_objects):
+def __indexes(lst, fasta_object, gff3_objects):
     element = fasta_object.get_seqID()
 #    element = "AT1G01010.1"
     offset = -1
@@ -139,15 +172,15 @@ def indexes(lst, fasta_object, gff3_objects):
             return None
 
 #        print("off",offset,"ele",element)
-        update_fasta_object(fasta_object, gff3_objects[offset])
+        __update_fasta_object(fasta_object, gff3_objects[offset])
 
 
-def update_fasta_object(fasta_object, gff3_object):
+def __update_fasta_object(fasta_object, gff3_object):
     fasta_object.add_gff3_hit(gff3_object)
     fasta_object.set_chromosome(gff3_object.get_seqID())
 
 
-def count_fasta_chr(fasta_objects):
+def __count_fasta_chr(fasta_objects):
     counts = dict()
 
     for fasta_object in fasta_objects:
@@ -166,7 +199,7 @@ def count_fasta_chr(fasta_objects):
     return counts
 
 
-def make_plot(frequencies):
+def __make_plot(frequencies):
 #    fig = plt.bar(frequencies.keys(), frequencies.values(), align="center")
 #
 #    data_amount = len(frequencies)
@@ -193,7 +226,7 @@ def make_plot(frequencies):
 
 
 
-def print_info(fasta_objects):
+def __print_info(fasta_objects):
     for x in fasta_objects:
         if len(x.get_hits()) > 1:
             print("Seq ID:",x.get_seqID())
@@ -209,4 +242,4 @@ def print_info(fasta_objects):
 
 
 if __name__ == "__main__":
-    main()
+    __main()
