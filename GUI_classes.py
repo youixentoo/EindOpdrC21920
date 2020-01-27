@@ -78,14 +78,14 @@ class Plot():
 
 class TAIRGUI():
     
-    _fasta_objects = [None]
+    _fasta_objects = ["placeholder1", "placeholder2", "placeholder3"]
     _menu_setup = True
     
     def __init__(self):
         self.root = tk.Tk()
         self.root.wm_title("TAIR GUI")
         
-        self.root.resizable(False, True) # Breedte is niet aan te passes hierdoor.
+        self.root.resizable(False, False) # Grootte GUI is niet aan te passen
         
         self.filler1 = tk.Label(self.root, text="")
         self.filler1.grid(row=0, column=0, columnspan=3, padx=10)
@@ -128,16 +128,28 @@ class TAIRGUI():
         self.files_button.grid(row=5, column=2, padx=2, sticky="e")
 
         self.fileMessage_label = tk.Label(self.root, text="")
-        self.fileMessage_label.grid(row=6, column=0, columnspan=3, padx=10)
+        self.fileMessage_label.grid(row=6, column=0, columnspan=2, padx=10)
+        
+        self.plot_var = tk.BooleanVar()
+        self.show_plot_checkbox = tk.Checkbutton(self.root, text="Show plot", variable=self.plot_var)
+        self.show_plot_checkbox.grid(row=6, column=2, sticky="e")
         
         self.data_button = tk.Button(self.root, text="Load data", command=self._load_data, width=8)
-        self.data_button.grid(row=7, column=2, padx=2, pady=5, sticky="e")
+        self.data_button.grid(row=7, column=2, padx=2, pady=3, sticky="e")
         
         self.start_var = tk.StringVar(self.root, "None")
-        self.data_dropdown = tk.OptionMenu(self.root, self.start_var, *self._fasta_objects)
-        self.data_dropdown.grid(row=7, column=0, columnspan=2, padx=2, pady=5, sticky="w")
-        self.start_var.trace("w", self._get_fasta)
+        self.data_dropdown = tk.OptionMenu(self.root, self.start_var, *self._fasta_objects, command=self._get_fasta)
+        self.data_dropdown.grid(row=7, column=0, columnspan=2, padx=2, pady=3, sticky="w")
+#        self.start_var.trace("w", self._get_fasta)
         
+        self.label_under_menu = tk.Label(self.root, text="")
+        self.label_under_menu.grid(row=8, column=0, padx=2, pady=5, sticky="w")
+        
+        self.results_textfield = tk.Text(self.root, state="disabled", height=10, width=26)
+        self.results_textfield.grid(row=8, column=1, columnspan=2, padx=2, pady=5, sticky="w")
+        
+        self.bottom_filler = tk.Label(self.root, text="")
+        self.bottom_filler.grid(row=9, column=0, columnspan=3)
 
 #        
    
@@ -191,6 +203,14 @@ class TAIRGUI():
             
             self._set_menu()
             
+            if self.plot_var.get():
+                TAIR.show_plot(self.fasta_objects)
+                
+            del self.gff3_objects
+            del self.pattern
+            
+            gc.collect()
+            
         else:
             self.set_progress("Pattern is empty", "Red")
             
@@ -205,23 +225,32 @@ class TAIRGUI():
         self.start_var.set(self.fasta_objects[0].get_seqID())
         self.data_dropdown["menu"].delete(0, "end")
         for fasta_object in self.fasta_objects:
-            self.data_dropdown["menu"].add_command(label=fasta_object.get_seqID(), command=tk._setit(self.start_var, fasta_object.get_seqID()))
+            self.data_dropdown["menu"].add_command(label=fasta_object.get_seqID(), command=self._get_fasta)
         self._menu_setup = False
         
+"""
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "C:\Users\gebruiker\Anaconda3\lib\tkinter\__init__.py", line 1705, in __call__
+    return self.func(*args)
+TypeError: _get_fasta() missing 1 required positional argument: 'value'
+"""
 
-    def _get_fasta(self, *args):
-        if not self._menu_setup:
-            print(args)
-            print(self.data_menu.get())
+    def _get_fasta(self, value, *args):
 
-
-
-
-
-
-
-
-
+        result = TAIR.get_fasta_data(value, self.fasta_objects)
+        print(result)
+        
+        if not result == None:
+            text = result.get_textfield_data(self.chr_lengths)
+            self._set_results_text(text)
+            
+            
+    def _set_results_text(self, text):
+        self.results_textfield.configure(state="normal")
+        self.results_textfield.delete(1.0, tk.END)
+        self.results_textfield.insert(tk.END, text)
+        self.results_textfield.configure(state="disabled")
 
 
 

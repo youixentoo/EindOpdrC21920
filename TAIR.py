@@ -53,6 +53,21 @@ def load_data(fasta_data, gff3_data, pattern):
     
     return fasta_objects, gff3_objects, chr_lengths
 
+def show_plot(fasta_objects):
+    frequencies = __count_fasta_chr(fasta_objects)
+    __make_plot(frequencies)
+    
+    
+    
+def get_fasta_data(seqID, fasta_objects):
+    for fasta_object in fasta_objects:
+        if fasta_object.get_seqID() == seqID:
+            return fasta_object
+    else:
+        return None
+    
+    
+
 """
 Main methode voor het uitvoeren van het script vanuit hier.
 De GUI roept bovenstaande methodes aan.

@@ -95,6 +95,26 @@ class Fasta():
 
     def get_stops(self):
         return self.stops
+    
+    def get_length_gene(self):
+        if self.start > self.stop:
+            return self.start - self.stop
+        else:
+            return self.stop - self.start
+    
+    def get_textfield_data(self, chr_lengths):
+        pos_chr_s = int(self.start)/int(chr_lengths.get(x.get_chromosome()))
+        pos_chr_e = int(self.stop)/int(chr_lengths.get(x.get_chromosome()))
+        print(pos_chr_s, "-->", pos_chr_e)
+        
+        chr_rep = "----------------------------------------------------------------------------------------------------"
+#        chr_r = chr_rep[:pos_chr_s] + "=" + chr_rep[pos_chr_s+1:]
+        temp = list(chr_rep)
+        temp[pos_chr_s] = "="
+        chr_loc = "".join(temp)
+        
+        
+        return "Amount of exomes: {}\nTotal length of gene:{}\nChromosome number:{}\nLocation on chromosome:\n{}".format(self.get_number_of_exomes(), self.get_length_gene(), self.get_chromosome(), chr_loc)
 
 
 class GFF3():
