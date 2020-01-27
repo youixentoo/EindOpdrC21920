@@ -32,8 +32,8 @@ def fix_linebreaks(opened_file, fasta_start = ">"):
 
 def process_csv(opened_file, delimiter=","):
     lines = []
-    
+
     for line in opened_file:
         lines.append(line.split(delimiter))
-        
+
     return lines
