@@ -8,8 +8,10 @@ Methodes om bestanden te verwerken.
 """
 import re
 
-# Zorgt ervoor dat het bestand, met de line breaks, goed wordt verwerkt.
-# Returneerd een zip() van de headers en sequenties
+"""
+Zorgt ervoor dat het bestand, met de line breaks, goed wordt verwerkt.
+Geeft een zip() van de headers en sequenties.
+"""
 def fix_linebreaks(opened_file, fasta_start = ">"):
     headers = []
     sequences = []
@@ -25,11 +27,14 @@ def fix_linebreaks(opened_file, fasta_start = ">"):
 
     sequences.append("".join(sequence))
 
-    # De eerste index van sequences is leeg, in plaats van fixen,
+    # De eerste index van sequences is leeg, in plaats van fixen.
     # is het negeren van de eerste index makkelijker. Data gaat niet verloren.
     return zip(headers, sequences[1::])
 
 
+"""
+Leest een csv of tsv bestand in en geeft alle regels terug in een lijst.
+"""
 def process_csv(opened_file, delimiter=","):
     lines = []
 

@@ -2,26 +2,34 @@
 """
 Created on Sun Jan 26 15:34:58 2020
 
-@author: gebruiker
+@author: Thijs Weenink
+
+Classes voor GUI's
 """
+# tkinter imports
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.font as tkf
 
+# matplotlib imports
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
-# Implement the default Matplotlib key bindings.
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+
+
+# Andere imports
+import gc
+from memory_profiler import profile
 from numpy import linspace # Alleen voor opmaak grafiek
 
-import numpy as np
-from memory_profiler import profile
-
-import gc
-
+# Eigen scripts
 import TAIR
 
+
+"""
+Visualisatie van de grafiek in een FigureCanvasTkAgg()
+"""
 class Plot():
 
     def __init__(self, data):
@@ -30,23 +38,8 @@ class Plot():
         self.root.wm_title("Genen per chromosoom plot")
 
         fig = Figure(figsize=(5, 4), dpi=100)
-#        t = np.arange(0, 3, .01)
-
-#        plot = plt.bar(data.keys(), data.values(), align="center")
 
         fig.add_subplot(111).bar(data.keys(), data.values(), align="center")
-
-#        data_amount = len(data)
-#        colors = iter(plt.cm.rainbow(linspace(0,1,data_amount)))
-#        for i in range(data_amount):
-#            c = next(colors)
-#            plt[i].set_color(c)
-
-        # Legenda en namen
-#        plt.legend(fig,data.keys())
-#        plt.title("Aantal genen met Serine/Threonine kinase active site per chromosoom")
-#        plt.ylabel("Aantal genen")
-#        plt.xlabel("Chromosoom")
 
         self.canvas = FigureCanvasTkAgg(fig, master=self.root)  # A tk.DrawingArea.
         self.canvas.draw()
@@ -76,13 +69,41 @@ class Plot():
 
     # If you put root.destroy() here, it will cause an error if the window is
     # closed with the window manager.
+    
+"""
+Not implemented yet
+"""
+class TextPlot():
+    
+    def __init__(self):
+        pass
+#        plot = plt.bar(data.keys(), data.values(), align="center")        
+        
+#        data_amount = len(data)
+#        colors = iter(plt.cm.rainbow(linspace(0,1,data_amount)))
+#        for i in range(data_amount):
+#            c = next(colors)
+#            plt[i].set_color(c)
 
+        # Legenda en namen
+#        plt.legend(fig,data.keys())
+#        plt.title("Aantal genen met Serine/Threonine kinase active site per chromosoom")
+#        plt.ylabel("Aantal genen")
+#        plt.xlabel("Chromosoom")
+        
 
+"""
+De GUI voor het script.
+Roep .run() aan voor uitvoeren.
+"""
 class TAIRGUI():
     
     _fasta_objects = ["placeholder"]
     _menu_setup = True
     
+    """
+    GUI elementen
+    """
     def __init__(self):
         self.root = tk.Tk()
         self.root.wm_title("TAIR GUI")
@@ -115,7 +136,6 @@ class TAIRGUI():
         self.pattern_label = tk.Label(self.root, text="Pattern to search:")
         self.pattern_label.grid(row=4, column=0, sticky="w")
 
-
         pattern = tk.StringVar(self.root, value="[LIVMFYC].[HY].D[LIVMFY]K.{2}N[LIVMFYCT]{3}")
         self.pattern_entry = tk.Entry(self.root, width=50, borderwidth=2, textvariable=pattern)
         self.pattern_entry.grid(row=4, column=1, columnspan=2, padx=2, sticky="w")
@@ -139,6 +159,7 @@ class TAIRGUI():
         self.data_button = tk.Button(self.root, text="Load data", command=self._load_data, width=8)
         self.data_button.grid(row=7, column=2, padx=2, pady=3, sticky="e")
         
+        # OptionMenu werkt nog niet.
         self.start_var = tk.StringVar()
         self.data_dropdown = ttk.OptionMenu(self.root, self.start_var, "Choose", self._fasta_objects)
         self.data_dropdown.grid(row=7, column=0, columnspan=2, padx=2, pady=3, sticky="w")
@@ -157,16 +178,22 @@ class TAIRGUI():
         self.bottom_filler = tk.Label(self.root, text="")
         self.bottom_filler.grid(row=9, column=0, columnspan=3)
 
-   
+    """
+    Roep deze methode aan om de GUI te runnen.
+    """
     def run(self):
         self.root.mainloop()
     
-    
+    """
+    Voor als de GUI moet worden afgesloten via een script.
+    """
     def _exit(self):
         self.root.quit()
         self.root.destroy()
         
-        
+    """
+    Methode om de configuratie opties te resetten naar de originele waardes.
+    """
     def _reset(self):
         filename = tk.StringVar(self.root, value="Data\TAIR10_pep_20101214.fa")
         filename_gff3 = tk.StringVar(self.root, value="Data\TAIR10_GFF3_genes.gff")
@@ -176,6 +203,12 @@ class TAIRGUI():
         self.file_entry_gff3["textvariable"] = filename_gff3
         self.pattern_entry["textvariable"] = pattern
         
+    """
+    Methode om de bestandsnamen op te halen uit de Entries en de data uit de bestanden
+    in te laden.
+    Geeft een foutmelding als de bestanden niet de correcte extensie hebben of niet gevonden
+    kunnen worden.
+    """    
     @profile
     def _open_files(self):
         self.file_loaded_label["text"] = ""
@@ -185,13 +218,22 @@ class TAIRGUI():
         gff3_file = self.file_entry_gff3.get()
         
         if fasta_file.endswith(".fa") and gff3_file.endswith(".gff"):
-            self.fasta_data, self.gff3_data = TAIR.open_files(fasta_file, gff3_file)
-            self.file_loaded_label["text"] = "Files loaded"
-            self.file_loaded_label.config(fg="Green")
+            try:
+                self.fasta_data, self.gff3_data = TAIR.open_files(fasta_file, gff3_file)
+                self.file_loaded_label["text"] = "Files loaded"
+                self.file_loaded_label.config(fg="Green")
+            except IOError:
+                self.file_loaded_label["text"] = "File Error"
+                self.file_loaded_label.config(fg="RED")
         else:
             self.file_loaded_label["text"] = "Incorrect files"
             self.file_loaded_label.config(fg="RED")
-            
+       
+    """
+    Methode om de data uit de bestanden in te laden.
+    Zie TAIR.py voor verdere uitleg.
+    Geeft een foutmelding als er geen patroon is gevonden.
+    """    
     @profile
     def _load_data(self):
         self.pattern = self.pattern_entry.get()
@@ -220,13 +262,21 @@ class TAIRGUI():
             self.set_progress("Pattern is empty", "Red")
             
     
+    """
+    Methode om een label aan te passen.
+    """
     def set_progress(self, message, color):
         self.progress_label["text"] = message
         self.progress_label.config(fg=color)
         
-        
+    
+    """
+    Dit zou alle seqID's in het OptionMenu moeten zetten,
+    maar omdat het een [...] widget is, werkt het niet.
+    """
     def _set_menu(self):
         
+        # OptionMenu is such a shit widget.
         values = [fasta.get_seqID() for fasta in self.fasta_objects]
         
 #        var = tk.StringVar(values[0])
@@ -250,36 +300,43 @@ class TAIRGUI():
 ##            self.data_dropdown["menu"].add_command(label=fasta_object.get_seqID(), command=self._get_fasta)
 #        self._menu_setup = False
         
-#    Exception in Tkinter callback
-#    Traceback (most recent call last):
-#      File "C:\Users\gebruiker\Anaconda3\lib\tkinter\__init__.py", line 1705, in __call__
-#        return self.func(*args)
-#    TypeError: _get_fasta() missing 1 required positional argument: 'value'
             
-            
+    """
+    Methode om text in het textveld te zetten.
+    """      
     def _set_results_text(self, text):
         self.results_textfield.configure(state="normal")
         self.results_textfield.delete(1.0, tk.END)
         self.results_textfield.insert(tk.END, text)
         self.results_textfield.configure(state="disabled")
-        
-        
-    def _get_fasta(self, *args):
-        selected = self.start_var.get()
-        
-        if len(selected) > 100:
-            print(selected, len(selected))
-        else:
-            result = TAIR.get_fasta_data(selected, self.fasta_objects)
-            print(result)
-            
-            if not result == None:
-                text = result.get_textfield_data(self.chr_lengths)
-                print("Text:\n", text)
-                self._set_results_text(text)
        
+        
+    """
+    Methode die de geselecteerde waarde uit het OptionMenu haalt en de bebehorende
+    data uit de lijst met fasta objecten haalt. Vervolgens wordt dit in het textveld gezet.
+    """
+    def _get_fasta(self, *args):
+        try:
+            selected = self.start_var.get()
+            
+            if len(selected) > 100:
+                print(selected, len(selected))
+            else:
+                result = TAIR.get_fasta_data(selected, self.fasta_objects)
+                print(result)
+                
+                if not result == None:
+                    text = result.get_textfield_data(self.chr_lengths)
+                    print("Text:\n", text)
+                    self._set_results_text(text)
+        except AttributeError:
+            pass
+   
 
 
+"""
+Aanroepen van de GUI
+"""
 if __name__ == "__main__":
     TAIRGUI().run()
     

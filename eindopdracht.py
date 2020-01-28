@@ -2,7 +2,11 @@
 """
 Created on Mon Jan 27 16:39:14 2020
 
-@author: gebruiker
+@author: Thijs Weenink
+
+Bestand om de GUI uit te voeren.
+
+In alle andere bestand staat commentaar, niet PEP-8, want wie heeft daar nou zin in.
 """
 import GUI_classes
 
