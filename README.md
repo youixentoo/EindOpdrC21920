@@ -7,4 +7,4 @@ Alleen code beschikbaar, geen data bestanden
 
 Heeft nu ongeveer 3.2 GB aan geheugen nodig.
 
-OptionMenu is minder gebruiksvriendelijk dan Jlist.
+Zelfs BioJava werkt beter dan OptionMenu.
