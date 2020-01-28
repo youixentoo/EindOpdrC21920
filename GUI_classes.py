@@ -5,6 +5,8 @@ Created on Sun Jan 26 15:34:58 2020
 @author: gebruiker
 """
 import tkinter as tk
+import tkinter.ttk as ttk
+import tkinter.font as tkf
 
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 # Implement the default Matplotlib key bindings.
@@ -78,7 +80,7 @@ class Plot():
 
 class TAIRGUI():
     
-    _fasta_objects = ["placeholder1", "placeholder2", "placeholder3"]
+    _fasta_objects = ["placeholder"]
     _menu_setup = True
     
     def __init__(self):
@@ -137,21 +139,24 @@ class TAIRGUI():
         self.data_button = tk.Button(self.root, text="Load data", command=self._load_data, width=8)
         self.data_button.grid(row=7, column=2, padx=2, pady=3, sticky="e")
         
-        self.start_var = tk.StringVar(self.root, "None")
-        self.data_dropdown = tk.OptionMenu(self.root, self.start_var, *self._fasta_objects, command=self._get_fasta)
+        self.start_var = tk.StringVar()
+        self.data_dropdown = ttk.OptionMenu(self.root, self.start_var, "Choose", self._fasta_objects)
         self.data_dropdown.grid(row=7, column=0, columnspan=2, padx=2, pady=3, sticky="w")
+        self.start_var.trace("w", self._get_fasta)
+        self.data_dropdown.focus()
+#        self.data_dropdown.add_callback(self.callback)
 #        self.start_var.trace("w", self._get_fasta)
         
         self.label_under_menu = tk.Label(self.root, text="")
         self.label_under_menu.grid(row=8, column=0, padx=2, pady=5, sticky="w")
         
-        self.results_textfield = tk.Text(self.root, state="disabled", height=10, width=26)
+        self.results_textfield = tk.Text(self.root, state="normal", height=10, width=29)
+        self.results_textfield.configure(font=('Courier New', 8)) # size 8 ipv 10
         self.results_textfield.grid(row=8, column=1, columnspan=2, padx=2, pady=5, sticky="w")
         
         self.bottom_filler = tk.Label(self.root, text="")
         self.bottom_filler.grid(row=9, column=0, columnspan=3)
 
-#        
    
     def run(self):
         self.root.mainloop()
@@ -221,29 +226,35 @@ class TAIRGUI():
         
         
     def _set_menu(self):
-        self._menu_setup = True
-        self.start_var.set(self.fasta_objects[0].get_seqID())
-        self.data_dropdown["menu"].delete(0, "end")
-        for fasta_object in self.fasta_objects:
-            self.data_dropdown["menu"].add_command(label=fasta_object.get_seqID(), command=self._get_fasta)
-        self._menu_setup = False
         
-"""
-Exception in Tkinter callback
-Traceback (most recent call last):
-  File "C:\Users\gebruiker\Anaconda3\lib\tkinter\__init__.py", line 1705, in __call__
-    return self.func(*args)
-TypeError: _get_fasta() missing 1 required positional argument: 'value'
-"""
-
-    def _get_fasta(self, value, *args):
-
-        result = TAIR.get_fasta_data(value, self.fasta_objects)
-        print(result)
+        values = [fasta.get_seqID() for fasta in self.fasta_objects]
         
-        if not result == None:
-            text = result.get_textfield_data(self.chr_lengths)
-            self._set_results_text(text)
+#        var = tk.StringVar(values[0])
+#        print(len(values))
+        
+        self.data_dropdown.set_menu(self.fasta_objects[0].get_seqID(), values)
+        
+#        for val in values:
+#            self.data_dropdown["menu"].add_command(label=val, command=tk._setit(var, val))
+#            
+#        self.data_dropdown.set_initial(values[0])
+#        
+#        self.data_dropdown.add_callback(self.callback)
+        
+#        self.data_dropdown.set_menu("None", values)
+#        self._menu_setup = True
+#        self.start_var.set(self.fasta_objects[0].get_seqID())
+#        self.data_dropdown["menu"].delete(0, "end")
+#        for fasta_object in self.fasta_objects:
+#            pass
+##            self.data_dropdown["menu"].add_command(label=fasta_object.get_seqID(), command=self._get_fasta)
+#        self._menu_setup = False
+        
+#    Exception in Tkinter callback
+#    Traceback (most recent call last):
+#      File "C:\Users\gebruiker\Anaconda3\lib\tkinter\__init__.py", line 1705, in __call__
+#        return self.func(*args)
+#    TypeError: _get_fasta() missing 1 required positional argument: 'value'
             
             
     def _set_results_text(self, text):
@@ -251,7 +262,22 @@ TypeError: _get_fasta() missing 1 required positional argument: 'value'
         self.results_textfield.delete(1.0, tk.END)
         self.results_textfield.insert(tk.END, text)
         self.results_textfield.configure(state="disabled")
-
+        
+        
+    def _get_fasta(self, *args):
+        selected = self.start_var.get()
+        
+        if len(selected) > 100:
+            print(selected, len(selected))
+        else:
+            result = TAIR.get_fasta_data(selected, self.fasta_objects)
+            print(result)
+            
+            if not result == None:
+                text = result.get_textfield_data(self.chr_lengths)
+                print("Text:\n", text)
+                self._set_results_text(text)
+       
 
 
 if __name__ == "__main__":
