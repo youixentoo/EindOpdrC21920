@@ -5,6 +5,6 @@ Alleen code beschikbaar, geen data bestanden
 
 "eindopdracht.py" is het bestand om uit te voeren.
 
-Heeft nu ongeveer 3.2 GB aan geheugen nodig.
+Meeste geheugen dat ik heb gezien is rond de 3.2GB.
 
 Zelfs BioJava werkt beter dan OptionMenu.
