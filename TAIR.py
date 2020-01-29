@@ -7,12 +7,13 @@ Created on Thu Jan 23 16:26:14 2020
 Methodes voor data verwerking.
 """
 # Niet functionele imports
-from memory_profiler import profile
+#from memory_profiler import profile
 import gc
 
 # Eigen scripts
 import file_processing
 import FileObjects
+from FileObjects import Fasta
 import GUI_classes
 
 # Benodigde imports
@@ -82,7 +83,7 @@ De GUI roept bovenstaande methodes aan.
 
 Eerste 5 variabelen zijn voor configuratie van het script.
 """
-@profile
+#@profile
 def __main():
     data_dir = "Data/"
     fasta_name = "TAIR10_pep_20101214.fa"
@@ -152,7 +153,7 @@ def __process_data(fasta_data, gff3_data, pattern):
 
     for header, sequence in fasta_data:
         if not re.search(pattern, sequence) == None:
-            fasta_objects.append(FileObjects.Fasta.create_simple_fasta(header, sequence))
+            fasta_objects.append(Fasta.create_simple_fasta(header, sequence))
 
     for data in gff3_data:
         gff3_object = FileObjects.GFF3.create_from_raw_data(data)
@@ -164,6 +165,8 @@ def __process_data(fasta_data, gff3_data, pattern):
                 chr_lengths[gff3_object.get_seqID()] = gff3_object.get_end()
             except Exception as ex:
                 print("Error in __process_data():\n",repr(ex))
+                
+    fasta_objects.sort(key=lambda Fasta: Fasta.get_seqID())
 
     return fasta_objects, gff3_objects, gff3_attrs_ID, gff3_attrs_Par, chr_lengths
 
@@ -246,22 +249,10 @@ def __count_fasta_chr(fasta_objects):
 Maakt de grafiek
 """
 def __make_plot(frequencies):
-    GUI_classes.Plot(frequencies)
-#    fig = plt.bar(frequencies.keys(), frequencies.values(), align="center")
-#
-#    data_amount = len(frequencies)
-#    colors = iter(plt.cm.rainbow(linspace(0,1,data_amount)))
-#    for i in range(data_amount):
-#        c = next(colors)
-#        fig[i].set_color(c)
-#
-#    # Legenda en namen
-#    plt.legend(fig,frequencies.keys())
-#    plt.title("Aantal genen met Serine/Threonine kinase active site per chromosoom")
-#    plt.ylabel("Aantal genen")
-#    plt.xlabel("Chromosoom")
-
-#    plt.show()
+    if len(frequencies) > 0:
+        GUI_classes.Plot(frequencies)
+    else:
+        raise Exception # Maakt mij niet uit wat voor een exception, wordt toch globaal afgevangen.
 
 
 """

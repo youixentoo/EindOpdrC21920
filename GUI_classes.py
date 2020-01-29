@@ -8,8 +8,6 @@ Classes voor GUI's
 """
 # tkinter imports
 import tkinter as tk
-import tkinter.ttk as ttk
-import tkinter.font as tkf
 
 # matplotlib imports
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -20,7 +18,7 @@ import matplotlib.pyplot as plt
 
 # Andere imports
 import gc
-from memory_profiler import profile
+#from memory_profiler import profile
 from numpy import linspace # Alleen voor opmaak grafiek
 
 # Eigen scripts
@@ -29,18 +27,34 @@ import TAIR
 
 """
 Visualisatie van de grafiek in een FigureCanvasTkAgg()
+
+Gebruikt np.linespace() en plt.cm.rainbow() voor kleuring.
 """
 class Plot():
 
     def __init__(self, data):
 
-        self.root = tk.Tk()
+        self.root = tk.Toplevel()
         self.root.wm_title("Genen per chromosoom plot")
 
         fig = Figure(figsize=(5, 4), dpi=100)
 
-        fig.add_subplot(111).bar(data.keys(), data.values(), align="center")
-
+        plot = fig.add_subplot(111)
+        
+        # Een legenda is vrij nutteloos
+        plot.set_title("Aantal genen met Serine/Threonine kinase active site")
+        plot.set_ylabel("Aantal genen")
+        plot.set_xlabel("Chromosoom")
+        
+        bars = plot.bar(data.keys(), data.values(), align="center")
+        
+        # Kleuring van de plot
+        data_amount = len(data)
+        colors = iter(plt.cm.rainbow(linspace(0,1,data_amount)))
+        for i in range(data_amount):
+            c = next(colors)
+            bars[i].set_color(c)
+        
         self.canvas = FigureCanvasTkAgg(fig, master=self.root)  # A tk.DrawingArea.
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
@@ -58,7 +72,7 @@ class Plot():
 
 
     def on_key_press(self, event):
-        print("you pressed {}".format(event.key))
+#        print("you pressed {}".format(event.key))
         key_press_handler(event, self.canvas, self.toolbar)
 
 
@@ -69,28 +83,6 @@ class Plot():
 
     # If you put root.destroy() here, it will cause an error if the window is
     # closed with the window manager.
-    
-"""
-Not implemented yet
-"""
-class TextPlot():
-    
-    def __init__(self):
-        pass
-#        plot = plt.bar(data.keys(), data.values(), align="center")        
-        
-#        data_amount = len(data)
-#        colors = iter(plt.cm.rainbow(linspace(0,1,data_amount)))
-#        for i in range(data_amount):
-#            c = next(colors)
-#            plt[i].set_color(c)
-
-        # Legenda en namen
-#        plt.legend(fig,data.keys())
-#        plt.title("Aantal genen met Serine/Threonine kinase active site per chromosoom")
-#        plt.ylabel("Aantal genen")
-#        plt.xlabel("Chromosoom")
-        
 
 """
 De GUI voor het script.
@@ -98,7 +90,7 @@ Roep .run() aan voor uitvoeren.
 """
 class TAIRGUI():
     
-    _fasta_objects = ["placeholder"]
+    _fasta_objects = ["None"]
     _menu_setup = True
     
     """
@@ -159,14 +151,13 @@ class TAIRGUI():
         self.data_button = tk.Button(self.root, text="Load data", command=self._load_data, width=8)
         self.data_button.grid(row=7, column=2, padx=2, pady=3, sticky="e")
         
-        # OptionMenu werkt nog niet.
         self.start_var = tk.StringVar()
-        self.data_dropdown = ttk.OptionMenu(self.root, self.start_var, "Choose", self._fasta_objects)
-        self.data_dropdown.grid(row=7, column=0, columnspan=2, padx=2, pady=3, sticky="w")
+        self.start_var.set("Choose")
         self.start_var.trace("w", self._get_fasta)
-        self.data_dropdown.focus()
-#        self.data_dropdown.add_callback(self.callback)
+        self.data_dropdown = tk.OptionMenu(self.root, self.start_var, *self._fasta_objects)
+        self.data_dropdown.grid(row=7, column=0, columnspan=2, padx=2, pady=3, sticky="w")
 #        self.start_var.trace("w", self._get_fasta)
+#        self.data_dropdown.focus()
         
         self.label_under_menu = tk.Label(self.root, text="")
         self.label_under_menu.grid(row=8, column=0, padx=2, pady=5, sticky="w")
@@ -209,10 +200,12 @@ class TAIRGUI():
     Geeft een foutmelding als de bestanden niet de correcte extensie hebben of niet gevonden
     kunnen worden.
     """    
-    @profile
+#    @profile
     def _open_files(self):
         self.file_loaded_label["text"] = ""
         self.file_loaded_label.config(fg="BLACK")
+        
+        self.set_progress("No data loaded", "BLACK")
         
         fasta_file = self.file_entry.get()
         gff3_file = self.file_entry_gff3.get()
@@ -234,32 +227,43 @@ class TAIRGUI():
     Zie TAIR.py voor verdere uitleg.
     Geeft een foutmelding als er geen patroon is gevonden.
     """    
-    @profile
+#    @profile
     def _load_data(self):
-        self.pattern = self.pattern_entry.get()
-        self.set_progress("", "Black")
-        if not self.pattern == "":
-            self.set_progress("Loading data...", "Orange")
-            self.fasta_objects, self.gff3_objects, self.chr_lengths = TAIR.load_data(self.fasta_data, self.gff3_data, self.pattern)
-            self.set_progress("Data loaded", "Green")
-            
-            del self.fasta_data
-            del self.gff3_data
-            
-            gc.collect()
-            
-            self._set_menu()
-            
-            if self.plot_var.get():
-                TAIR.show_plot(self.fasta_objects)
+        try:
+            self.pattern = self.pattern_entry.get()
+            self.set_progress("", "Black")
+            if not self.pattern == "":
+                self.set_progress("Loading data...", "Orange")
+                self.fasta_objects, self.gff3_objects, self.chr_lengths = TAIR.load_data(self.fasta_data, self.gff3_data, self.pattern)
+                self.set_progress("Data loaded", "Green")
                 
-            del self.gff3_objects
-            del self.pattern
+    #            self._set_menu()
+                self.update_menu()
+                
+                if self.plot_var.get():
+                    try:
+                        TAIR.show_plot(self.fasta_objects)
+                    except Exception as ex: # TAIR.make_plot() raises een Exception
+                        self.reset_pattern()
+                        
+                del self.gff3_objects
+                del self.pattern
+                
+                gc.collect()
+                
+            else:
+                self.set_progress("Pattern is empty", "Red")
+                
+        except IndexError:
+            self.file_loaded_label["text"] = "Incorrect files"
+            self.file_loaded_label.config(fg="RED")           
+            self.set_progress("Problem loading data", "RED")
             
-            gc.collect()
-            
-        else:
-            self.set_progress("Pattern is empty", "Red")
+        except AttributeError:
+            if self.file_loaded_label["text"] == "No files opened":
+                self.set_progress("Problem loading data, open file first", "RED")
+            else:
+                self.set_progress("Problem loading data", "RED")
             
     
     """
@@ -271,34 +275,16 @@ class TAIRGUI():
         
     
     """
-    Dit zou alle seqID's in het OptionMenu moeten zetten,
-    maar omdat het een [...] widget is, werkt het niet.
-    """
-    def _set_menu(self):
-        
-        # OptionMenu is such a shit widget.
+    Deze methode set alle seqID's uit de fasta objecten in het menu.
+    """            
+    def update_menu(self):
         values = [fasta.get_seqID() for fasta in self.fasta_objects]
         
-#        var = tk.StringVar(values[0])
-#        print(len(values))
-        
-        self.data_dropdown.set_menu(self.fasta_objects[0].get_seqID(), values)
-        
-#        for val in values:
-#            self.data_dropdown["menu"].add_command(label=val, command=tk._setit(var, val))
-#            
-#        self.data_dropdown.set_initial(values[0])
-#        
-#        self.data_dropdown.add_callback(self.callback)
-        
-#        self.data_dropdown.set_menu("None", values)
-#        self._menu_setup = True
-#        self.start_var.set(self.fasta_objects[0].get_seqID())
-#        self.data_dropdown["menu"].delete(0, "end")
-#        for fasta_object in self.fasta_objects:
-#            pass
-##            self.data_dropdown["menu"].add_command(label=fasta_object.get_seqID(), command=self._get_fasta)
-#        self._menu_setup = False
+        menu = self.data_dropdown["menu"]
+        menu.delete(0, "end")
+        for string in values:
+            menu.add_command(label=string, 
+                             command=lambda value=string: self.start_var.set(value))
         
             
     """
@@ -320,17 +306,24 @@ class TAIRGUI():
             selected = self.start_var.get()
             
             if len(selected) > 100:
-                print(selected, len(selected))
+#                print(selected, len(selected))
+                pass
             else:
                 result = TAIR.get_fasta_data(selected, self.fasta_objects)
-                print(result)
+#                print(result)
                 
                 if not result == None:
                     text = result.get_textfield_data(self.chr_lengths)
-                    print("Text:\n", text)
+#                    print("Text:\n", text)
                     self._set_results_text(text)
         except AttributeError:
             pass
+        
+        
+    def reset_pattern(self):
+        pattern = tk.StringVar(self.root, value="[LIVMFYC].[HY].D[LIVMFY]K.{2}N[LIVMFYCT]{3}")
+
+        self.pattern_entry["textvariable"] = pattern
    
 
 

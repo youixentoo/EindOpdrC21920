@@ -7,6 +7,8 @@ Created on Mon Jan 27 16:39:14 2020
 Bestand om de GUI uit te voeren.
 
 In alle andere bestand staat commentaar, niet PEP-8, want wie heeft daar nou zin in.
+
+Alle verwachte exceptions worden afgevangen en een bericht wordt weergeven in de GUI. 
 """
 import GUI_classes
 
